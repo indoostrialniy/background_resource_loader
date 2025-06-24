@@ -1,28 +1,32 @@
 #pragma once
-
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
+// This file contains description of all resource classes you want to use in project
+// All this classes have to been inherited from base class "Resource" from "resouceManager.h"
 
-#include "resourceManager.h"
+#include <resourceManager.h>
 
-// custom resource class example
-class TestResource : public resource_manager::Resource	
+#include <string>
+
+
+class Test : public Resource	
 {
 public:
-	TestResource( const std::string& Name );	// must-have constructor
+	Test( const std::string& meshName );		// must-have member
 	
-	~TestResource();							// must-have destructor
+	~Test();									// must-have member
+	
+	void longLoading() override; 				// must-have member
+	
+	void quickConfiguring() override;			// must-have member
 
-private:
-	void longLoading() override; 				// must-have func
-	
-	void quickConfiguring() override;			// must-have func
 };
 
 
+// Be sure to call the method TestManager.StatusTracker.Execute(); in every loop cycle!
 
-resource_manager::Manager <TestResource> 		TestResources("TestResource");
+extern Manager <Test> 					TestManager;
 
 
 #endif

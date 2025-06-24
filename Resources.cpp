@@ -1,34 +1,29 @@
 #include "Resources.h"
 
-#include <thread>
+Manager <Test> 					TestManager("Test");
 
-//---------------------------------------------------------------------- 
-//---------------------------------------------------------------------- 
-//---------------------------------------------------------------------- 
-// TestResource
-//---------------------------------------------------------------------- 
-//---------------------------------------------------------------------- 
-//---------------------------------------------------------------------- 
-TestResource::TestResource( const std::string& meshName )
+
+
+Test::Test( const std::string& meshName )
 {	
 	resourceName = meshName;
 }
 
-
-TestResource::~TestResource()
+Test::~Test()
 {
+
+}
+
+void Test::longLoading()	// some heavy func, processed in background thread
+{	
 	
 }
-
-
-void TestResource::longLoading()								// runs in background thread
-{
-	std::this_thread::sleep_for(3000ms);
-}
 	
-
-void TestResource::quickConfiguring()							// runs in main thread
+void Test::quickConfiguring() // some quick func
 {
-	std::cout << "\n\n\t quickConfiguring is called from main thread!\n\n" << std::endl;
+
+	resourceStatus = true;
 }
+
+
 
