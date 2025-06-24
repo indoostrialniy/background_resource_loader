@@ -1,56 +1,76 @@
-## resource_manager v1.5
+## resource_manager v1.6
 	
 ## Назначение:
-Header-only библиотека *resource_manager* вкупе с интегрированной версией 1.5 библиотеки *biCycle* [https://github.com/indoostrialniy/biCycle] предоставляет возможность обработки данных в отдельном потоке, параллельно отслеживая
-статус завершенности этого потока и выполняя определенную функцию в основном потоке. 
+Библиотека *resource_manager* вкупе с интегрированной версией 1.5 библиотеки *biCycle* [https://github.com/indoostrialniy/biCycle] предоставляет возможность загрузки ресурсов в отдельном потоке, параллельно отслеживая статус завершенности этого потока и выполняя определенную функцию в основном потоке по окончании загрузки. 
 <br>
 Это может быть полезно при загрузке ассетов для игр, использующих OpenGL и позволит избежать блокировки основного потока на время загрузки ассета,
 а также ошибок, связанных с контекстом OpenGL.
 
-<br>В данном репозитории представлена демонстрационная программа, имитирующая фоновую загрузку модели. Код распределен по нескольким файлам:
+## Структура репозитория
+Код распределен по нескольким файлам:<br>
 
-*resourceManager.h* - файл с описанием самой библиотеки;
+*resourceManager.h* - файл самой библиотеки;
 
-*resourceExample.cpp* - файл с телом программы;
-
-*Resource.h / Resource.cpp* - отдельные файлы для объявления и определения классов-обработчиков пользовательских ресурсов.
-
-### Любой пользовательский класс-обработчик ресурса должен наследоваться от класса *resource_manager::Resource*, описанного в *resourceManager.h*!
-  
+*Resource.h / Resource.cpp* - примеры отдельных файлов для объявления и определения классов-обработчиков пользовательских ресурсов.
 
 ## Способ применения:
-1) В файле **Resource.h** подключить заголовочный файл **resourceManager.h** и объявить минимально-необходимое описание класса-обработчика:
+### Любой пользовательский класс-обработчик ресурса должен наследоваться от класса *Resource*, описанного в *resourceManager.h*!
+
+1) В файле с описанием пользовательских классов ресурсов подключить заголовочный файл **resourceManager.h** и объявить минимально-необходимое описание класса-обработчика ресурса (см. "Resources.h"),<br>
+по необходимости расширить, а также создать экземпляр менеджера этого ресурса:
 
         #include "resourceManager.h"
 
-        class TestResource : public resource_manager::Resource
+        class TestResource : public Resource
         {
           public:
               TestResource( const std::string& Name );	// must-have constructor
-              ~TestResource();							        // must-have destructor
-          private:
-              void longLoading() override; 				  // must-have func
-              void quickConfiguring() override;			// must-have func
+              ~TestResource();				// must-have destructor
+              void longLoading() override; 		// must-have func
+              void quickConfiguring() override;		// must-have func
         };
+
+   		extern Manager <Test> 			TestManager;	// Создать экземпляр менеджера данного ресурса:
+
+2) В файле с определением пользовательских ресурсов (см. "Resources.cpp") задать минимальный пользовательский код:
+
+		#include "Resources.h"
+		Manager <Test> 		TestManager("Test");
+		Test::Test( const std::string& meshName )
+		{	
+			resourceName = meshName;
+		}
+		Test::~Test()
+		{
+		
+		}
+		void Test::longLoading()	// some heavy func, processed in background thread
+		{	
+			
+		}	
+		void Test::quickConfiguring() // some quick func
+		{
+			resourceStatus = true;
+		}
+
 
 Функции **longLoading()** и **quickConfiguring()** в базовом классе **Resource** объявлены как чисто виртуальные, поэтому избежать их определения не получится, это обязательное условие.
 
-2) В нужном месте, например - в главном цикле, прописать вызовы метода Execute() используемых секвенсоров:
+3) Метод TestManager.StatusTracker.Execute(); прописать для вызова в каждом цикле программы. Это обязательно!
 
         while (1)
         {
-           resource_manager::ResourceLoader<resource_manager::Resource::ResourceTracker>.Execute();  // for manager
-           resource_manager::ResourceLoader<resource_manager::TrackerData<TestResource>>.Execute();  // for resource
+   			TestManager.StatusTracker.Execute();
         }
 
-3) Менеджер предоставляет 2 способа загрузки ресурса - в основном потоке
-
-  **.getAsset(const std::string& assetName)**
+4) Менеджер предоставляет 2 способа загрузки ресурса - в основном потоке
+	
+ 		TestManager.getAsset(const std::string& pathToResourceFile, std::shared_ptr<TestResource>& resourceInstance, false, [](){} );
    
 и параллельно
 
-  **.getAsset_Async(const std::string& assetName, std::shared_ptr<ResourceClass>& res)**
+	TestManager.getAsset(const std::string& pathToResourceFile, std::shared_ptr<TestResource>& resourceInstance, true, [&](){} );
     
-Во втором случае функция не возвращает значений, но с помощью библиотеки biCycle v1.5 запускает вспомогательную функцию, отслеживающую статус готовности ресурса и самоотвязывающуюся от исполнения при завершении загрузки ресурса.
+Загрузочная функция принимает строковое имя ресурса **pathToResourceFile**, ссылку на экземпляр **resourceInstance**, который будет хранить ресурс, булев спецификатор режима загрузки (asynchro-true/false) и лямбда-коллбэк-функцию, выполняющуюся по окончании загрузки ресурса. В случае указания асинхронности (true), с помощью встроенной библиотеки biCycle v1.5 запускается вспомогательная функция, отслеживающая статус готовности ресурса и самоотвязывающаяся от исполнения при завершении загрузки ресурса.
 
-## Актуальная версия 1.5
+## Актуальная версия 1.6
